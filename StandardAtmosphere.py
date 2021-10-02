@@ -109,49 +109,101 @@ def AscentLoop(height):
     GM      =   3.986004e+14
     ER      =   6.3781e+06
     SimBase =   0.1
-    SimTime =   84
+    SimTime =   20
     TimeVector = np.arange(0,SimTime, SimBase)
+    T           =   [0] * len(TimeVector)
+    p           =   [0] * len(TimeVector)
+    rho         =   [0] * len(TimeVector)
     g           =   [0] * len(TimeVector)
     F_G         =   [0] * len(TimeVector)
     F_B         =   [0] * len(TimeVector)
     F_D         =   [0] * len(TimeVector)
-    A_b         =   [1] * len(TimeVector)  # change
+    a           =   [0] * len(TimeVector)
+    v           =   [0] * len(TimeVector)
+    h           =   [0] * len(TimeVector)
+    r           =   [0] * len(TimeVector)
+    A_b         =   [0] * len(TimeVector)  # change
     V_b         =   [0] * len(TimeVector)
     ascent_rate =   [0] * len(TimeVector)
-    
+
+    h_offset = 100            # height above the mean sea level 
     burst_altitude = 0
     time_to_burst = 0
     neck_lift = 0
     launch_radius = 0
-    launch_volume = 0
+    V_b[0] = 2          # initial baloon volume
     t_0 = 0
-    mass_b = 0
-    mass_p = 0
     rho_He = 0.1786
     C_d = 0.3
     BaloonMass = 1
-    PayloadMass = 1
+    PayloadMass = 0.3
     TotalMass = BaloonMass + PayloadMass
 
     #burst_volume = (4.0/3.0) * math.pi * pow(balloon_burst_diameter / 2.0, 3)
 
-    for i in range(len(TimeVector)):
-        g[i]            = GM / (ER + height[i])**2
-        F_B[i]          = V_b[i] * (rho_He - Pressure(height[i], Temperature(height[i]))) * g[i]
+
+    #pierwsza pętla
+    h[0]            = 0 + h_offset
+    T[0]            = Temperature(h[0])
+    p[0]            = Pressure(h[0], T[0])
+    rho[0]          = Density(T[0], p[0])
+    k_constant      = (p[0]*V_b[0])/T[0]
+    g[0]            = GM / (ER + h[0])**2
+    F_B[0]          = -1 * V_b[0] * (rho_He - rho[0]) * g[0]
+    F_G[0]          = TotalMass * g[0]
+    F_D[0]          = 0
+    V_b[0]          = (k_constant * T[0])/p[0]
+    A_b[0]          = math.pi * ((3*V_b[0])/(4*math.pi))**(2/3)
+    r[0]            = math.sqrt(A_b[0]/math.pi) 
+    a[0]            = 0
+    v[0]            = 0
+    calka_v         = 0
+    calka_h         = 0 + h[0]
+
+    for i in range(1,len(TimeVector)):
+        #h[i]            = height[i] na koniec
+        T[i]            = Temperature(h[i-1])
+        p[i]            = Pressure(h[i-1], T[i])
+        rho[i]          = Density(T[i], p[i])
+        V_b[i]          = (k_constant * T[i])/p[i]
+        g[i]            = GM / (ER + h[i])**2
+        F_B[i]          = -1 * V_b[i] * (rho_He - rho[i]) * g[i]
         F_G[i]          = TotalMass * g[i]
+        A_b[i]          = math.pi * ((3*V_b[i])/(4*math.pi))**(2/3)
+        r[i]            = math.sqrt(A_b[i]/math.pi) 
+        F_D[i]          = 0.5*C_d*A_b[i]*((v[i-1])**2)
+
+        a[i]            = (F_B[i] - F_G[i] - F_D[i])/TotalMass
+        calka_v         = calka_v + (a[i] + a[i-1]) * 0.5 * SimBase
+        v[i]            = calka_v
+        calka_h         = calka_h + (v[i] + v[i-1]) * 0.5 * SimBase
+        h[i]            = calka_h
+        
         #V_b[i]          = 
         #A_b[i]          = 
-        #ascent_rate[i]   = math.sqrt(2*(F_B[i] - F_G[i])/(C_d * Pressure(height[i], Temperature(height[i])) * A_b[i]))
+        #ascent_rate[i]   = 2*(F_B[i] - F_G[i])/(C_d * Pressure(height[i], Temperature(height[i])) * A_b[i])
         #F_D[i]           = C_d * Pressure(height[i], Temperature(height[i])) * pow(ascent_rate,2) * A_b[i] / 2
 
     
                                 
-    return F_G, TimeVector
+    return r, A_b, V_b, h, T, p, g, F_G, F_B, F_D, a, v, h, TimeVector
 #-----------------------------------------------
 
 #-----------------------------------------------
 height          =   Height()
 
-F_G, TimeVector = AscentLoop(height)
+r, A_b, V_b, h, T, p, g, F_G, F_B, F_D, a, v, h, TimeVector = AscentLoop(height)
+print(r)
+print(A_b)
+print(V_b)
+print(h)
+print(T)
+print(p)
+print(g)
 print(F_G)
+print(F_B)
+print(F_D)
+print(a)
+print(v)
+print(h)
 print(TimeVector)

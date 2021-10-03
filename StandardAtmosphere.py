@@ -106,10 +106,11 @@ def SpeedOfSound(Th):
         
     return a_h    
 #-----------------------------------------------
-def AscentLoop(height):
+def MainLoop():
+    height  =   Height()
     GM      =   3.986004e+14
     ER      =   6.3781e+06
-    SimBase =   0.5
+    SimBase =   0.1
     SimTime =   72000
     TimeVector = np.arange(0,SimTime, SimBase)
     T           =   [0] * len(TimeVector)
@@ -123,7 +124,7 @@ def AscentLoop(height):
     v           =   [0] * len(TimeVector)
     h           =   [0] * len(TimeVector)
     r           =   [0] * len(TimeVector)
-    A_b         =   [0] * len(TimeVector)  # change
+    A_b         =   [0] * len(TimeVector)  
     V_b         =   [0] * len(TimeVector)
     ascent_rate =   [0] * len(TimeVector)
 
@@ -132,19 +133,16 @@ def AscentLoop(height):
     time_to_burst = 0
     neck_lift = 0
     launch_radius = 0
-    V_b[0] = 1.76          # initial baloon volume 2 , 1 0.1
+    V_b[0] = 1.1         # initial baloon volume 
     t_0 = 0
     rho_He = 0.1786
     C_d = 0.3
-    BaloonMass = 0.8
+    BaloonMass = 0.45
     PayloadMass = 0.25
     TotalMass = BaloonMass + PayloadMass
-    r_pop = 3.5
+    r_pop = 2.36
     pop_time = 0
     pop_height = 0
-    
-
-    #burst_volume = (4.0/3.0) * math.pi * pow(balloon_burst_diameter / 2.0, 3)
 
 
     #pierwsza pętla
@@ -166,45 +164,42 @@ def AscentLoop(height):
     calka_h         = 0 + h[0]
 
     for i in range(1,len(TimeVector)):
-        #h[i]            = height[i] na koniec
         T[i]            = Temperature(h[i-1])
         p[i]            = Pressure(h[i-1], T[i])
         rho[i]          = Density(T[i], p[i])
         V_b[i]          = (k_constant * T[i])/p[i]
         g[i]            = GM / (ER + h[i])**2
-        F_B[i]          = -1 * V_b[i] * (rho_He - rho[i]) * g[i]
+        F_B[i]          = V_b[i] * rho[i] * g[i]
         F_G[i]          = TotalMass * g[i]
         A_b[i]          = math.pi * ((3*V_b[i])/(4*math.pi))**(2/3)
         r[i]            = math.sqrt(A_b[i]/math.pi) 
         F_D[i]          = 0.5*C_d*A_b[i]*((v[i-1])**2)
-
+        
         a[i]            = (F_B[i] - F_G[i] - F_D[i])/TotalMass
-        #ascent_rate[i]  = 2*(F_B[i] - F_G[i])/(C_d * Pressure(height[i], Temperature(height[i])) * A_b[i])
-        #v[i]     = math.sqrt(2*(F_B[i] - F_G[i])/(C_d * rho[i] * A_b[i]))
-        v[i]            = math.sqrt((2*(F_G[i]))/(C_d * rho[i] * A_b[i]))
-        #calka_v         = calka_v + (a[i] + a[i-1]) * 0.5 * SimBase
-        #v[i]            = calka_v
+           
+        calka_v         = calka_v + (a[i] + a[i-1]) * 0.5 * SimBase
+        v[i]            = calka_v
+       
         calka_h         = calka_h + (v[i] + v[i-1]) * 0.5 * SimBase
         h[i]            = calka_h
 
         if r[i] >= r_pop:
-            pop_time    = i
+            pop_time    = i*SimBase
             pop_height  = h[i]
             break
-        
-        #V_b[i]          = 
-        #A_b[i]          = 
-        #
-        #F_D[i]           = C_d * Pressure(height[i], Temperature(height[i])) * pow(ascent_rate,2) * A_b[i] / 2
 
-    data = pd.DataFrame(np.transpose(np.array([TimeVector, h, v, a, T, p, rho, g, F_G, F_B, F_D, V_b, A_b, r])),
-                    columns=['Czas [s]', 'Wysokosc [m]', 'Predkosc pionowa [m/s]', 'Przyspieszenie[m/s^2]', 'Temperatura [K]', 'Cisnienie [Pa]', 'Gestosc [kg/m^3]', 'Przyspieszenie grawitacyjne [m/s^2]', 'Siła ciężkości [N]', 'Siła wyporu [N]', 'Siła oporu aerodynamicznego [N]', 'Objetosc balonu [m^3]', 'Powierzchnia czolowa balonu [m^2]', 'Promien balonu [m]'])
+
+    output_data = pd.DataFrame(np.transpose(np.array([TimeVector, h, v, a, T, p, rho, g, F_G, F_B, F_D, V_b, A_b, r])),
+                    columns=['Time [s]', 'Height [m]', 'Vertical speed [m/s]',
+                             'Acceleration [m/s^2]', 'Temperature [K]', 'Pressure [Pa]',
+                             'Density [kg/m^3]', 'Gravitational acceleration [m/s^2]',
+                             'Gravity [N]', 'Buoyancy [N]', 'Drag [N]',
+                             'Baloon volume [m^3]', 'Baloon cross-section area [m^2]', 'Baloon radius [m]'])
                                 
-    return data, pop_time, pop_height
+    return output_data, pop_time, pop_height
 #-----------------------------------------------
 
 #-----------------------------------------------
-height          =   Height()
 
-data, pop_time, pop_height = AscentLoop(height) #change
-print(data)
+output_data, pop_time, pop_height = MainLoop()
+print(pop_height)

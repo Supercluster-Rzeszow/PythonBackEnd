@@ -344,7 +344,7 @@ def MainLoop(wind_altitude_array, wind_direction_array, wind_speed_array, C_d, V
 
 #-----------------------------------------------
 
-def run(C_d, V_b, BaloonMass, PayloadMass, r_pop, initial_altitude, initial_latitude, initial_longitude, parachute_fall_rate_0):
+def run(C_d=0.3, V_b=1.1, BaloonMass=0.45, PayloadMass=0.25, r_pop=1.26, initial_altitude=100, initial_latitude=52.2, initial_longitude=51.1, parachute_fall_rate_0=8):
     wind_forecast           = np.loadtxt('Wind_forecast_Central_EU_2.txt')
     wind_altitude_array     = wind_forecast[:, 0]
     wind_direction_array    = wind_forecast[:, 1]
